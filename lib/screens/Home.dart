@@ -33,21 +33,42 @@ class _HomePageState extends State<HomePage> {
   final pages = const [DialPadScreen(), RecentsScreen(), ContactsScreen()];
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: pages[currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dialpad), label: 'Dial'),
-          NavigationDestination(icon: Icon(Icons.history), label: 'Recents'),
-          NavigationDestination(icon: Icon(Icons.contacts), label: 'Contacts'),
-        ],
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          backgroundColor: const Color(0xFF1E1E1E),
+          indicatorColor: Colors.deepPurple,
+
+          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              );
+            }
+            return const TextStyle(color: Colors.white70);
+          }),
+        ),
+        child: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              currentIndex = index;
+            });
+          },
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.dialpad), label: 'Dial'),
+            NavigationDestination(icon: Icon(Icons.history), label: 'Recents'),
+            NavigationDestination(
+              icon: Icon(Icons.contacts),
+              label: 'Contacts',
+            ),
+          ],
+        ),
       ),
     );
   }

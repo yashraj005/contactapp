@@ -42,18 +42,45 @@ class _ContactsScreenState extends State<ContactsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Contacts")),
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text("Contacts", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
+
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
             child: TextField(
               onChanged: searchContact,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "Search Contact",
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: const TextStyle(color: Colors.white54),
+
+                prefixIcon: const Icon(Icons.search, color: Colors.white70),
+
+                filled: true,
+                fillColor: const Color(0xFF1E1E1E),
+
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(
+                    color: Colors.deepPurple,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -65,28 +92,62 @@ class _ContactsScreenState extends State<ContactsScreen> {
               itemBuilder: (context, index) {
                 final contact = filteredContacts[index];
 
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(
-                      contact.displayName.isNotEmpty
-                          ? contact.displayName[0]
-                          : "?",
-                    ),
+                return Card(
+                  color: const Color(0xFF1E1E1E),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
-                  title: Text(contact.displayName),
-
-                  subtitle: contact.phones.isNotEmpty
-                      ? Text(contact.phones.first.number)
-                      : const Text("No Number"),
-
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ContactDetailsScreen(contact: contact),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.deepPurple,
+                      child: Text(
+                        contact.displayName.isNotEmpty
+                            ? contact.displayName[0].toUpperCase()
+                            : "?",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    );
-                  },
+                    ),
+
+                    title: Text(
+                      contact.displayName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    subtitle: contact.phones.isNotEmpty
+                        ? Text(
+                            contact.phones.first.number,
+                            style: const TextStyle(color: Colors.white70),
+                          )
+                        : const Text(
+                            "No Number",
+                            style: TextStyle(color: Colors.white54),
+                          ),
+
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white54,
+                    ),
+
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ContactDetailsScreen(contact: contact),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
