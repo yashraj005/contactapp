@@ -13,6 +13,7 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen> {
   List<Contact> contacts = [];
   List<Contact> filteredContacts = [];
+  bool isloading = true;
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       setState(() {
         contacts = result;
         filteredContacts = result;
+        isloading = false;
       });
     }
   }
@@ -49,111 +51,118 @@ class _ContactsScreenState extends State<ContactsScreen> {
         centerTitle: true,
       ),
 
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              onChanged: searchContact,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "Search Contact",
-                hintStyle: const TextStyle(color: Colors.white54),
+      body: isloading
+          ? const Center(
+              child: CircularProgressIndicator(color: Colors.deepPurple),
+            )
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    onChanged: searchContact,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Search Contact",
+                      hintStyle: const TextStyle(color: Colors.white54),
 
-                prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Colors.white70,
+                      ),
 
-                filled: true,
-                fillColor: const Color(0xFF1E1E1E),
+                      filled: true,
+                      fillColor: const Color(0xFF1E1E1E),
 
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
 
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
 
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(
-                    color: Colors.deepPurple,
-                    width: 2,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredContacts.length,
-              itemBuilder: (context, index) {
-                final contact = filteredContacts[index];
-
-                return Card(
-                  color: const Color(0xFF1E1E1E),
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.deepPurple,
-                      child: Text(
-                        contact.displayName.isNotEmpty
-                            ? contact.displayName[0].toUpperCase()
-                            : "?",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.deepPurple,
+                          width: 2,
                         ),
                       ),
                     ),
+                  ),
+                ),
 
-                    title: Text(
-                      contact.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: filteredContacts.length,
+                    itemBuilder: (context, index) {
+                      final contact = filteredContacts[index];
 
-                    subtitle: contact.phones.isNotEmpty
-                        ? Text(
-                            contact.phones.first.number,
-                            style: const TextStyle(color: Colors.white70),
-                          )
-                        : const Text(
-                            "No Number",
-                            style: TextStyle(color: Colors.white54),
+                      return Card(
+                        color: const Color(0xFF1E1E1E),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.deepPurple,
+                            child: Text(
+                              contact.displayName.isNotEmpty
+                                  ? contact.displayName[0].toUpperCase()
+                                  : "?",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
 
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Colors.white54,
-                    ),
+                          title: Text(
+                            contact.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
 
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ContactDetailsScreen(contact: contact),
+                          subtitle: contact.phones.isNotEmpty
+                              ? Text(
+                                  contact.phones.first.number,
+                                  style: const TextStyle(color: Colors.white70),
+                                )
+                              : const Text(
+                                  "No Number",
+                                  style: TextStyle(color: Colors.white54),
+                                ),
+
+                          trailing: const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white54,
+                          ),
+
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ContactDetailsScreen(contact: contact),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

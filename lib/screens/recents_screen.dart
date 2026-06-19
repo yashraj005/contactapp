@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:call_log/call_log.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:intl/intl.dart';
 import 'package:my_contact_list/screens/contact_details_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -20,6 +21,20 @@ class _RecentsScreenState extends State<RecentsScreen> {
   void initState() {
     super.initState();
     loadLogs();
+  }
+
+  String formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return "${hours}h ${minutes}m ${remainingSeconds}s";
+    } else if (minutes > 0) {
+      return "${minutes}m ${remainingSeconds}s";
+    } else {
+      return "${remainingSeconds}s";
+    }
   }
 
   Future<void> loadLogs() async {
@@ -217,17 +232,20 @@ class _RecentsScreenState extends State<RecentsScreen> {
                           style: const TextStyle(color: Colors.white70),
                         ),
 
+                        // Text(
+                        //   call.callType?.name.toUpperCase() ?? "UNKNOWN",
+                        //   style: const TextStyle(
+                        //     color: Colors.white60,
+                        //     fontSize: 12,
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
                         Text(
-                          call.callType?.name.toUpperCase() ?? "UNKNOWN",
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                          DateFormat('dd MMM yyyy, hh:mm a').format(
+                            DateTime.fromMillisecondsSinceEpoch(
+                              call.timestamp!,
+                            ),
                           ),
-                        ),
-
-                        Text(
-                          "Duration: ${call.duration ?? 0} sec",
                           style: const TextStyle(
                             color: Colors.white54,
                             fontSize: 12,
@@ -236,14 +254,24 @@ class _RecentsScreenState extends State<RecentsScreen> {
                       ],
                     ),
 
-                    trailing: IconButton(
-                      icon: getCallIcon(call.callType),
-                      onPressed: () {
-                        final number = call.number;
-                        if (number != null && number.isNotEmpty) {
-                          makeCall(number);
-                        }
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "${formatDuration(call.duration ?? 0)}",
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                        IconButton(
+                          iconSize: 20,
+                          icon: getCallIcon(call.callType),
+                          onPressed: () {
+                            final number = call.number;
+                            if (number != null && number.isNotEmpty) {
+                              makeCall(number);
+                            }
+                          },
+                        ),
+                      ],
                     ),
 
                     onTap: () {

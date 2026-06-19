@@ -23,6 +23,12 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
     await launchUrl(uri);
   }
 
+  Future<void> sendMessage(String number) async {
+    final Uri uri = Uri(scheme: 'sms', path: number);
+
+    await launchUrl(uri);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +61,18 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
         loadingHistory = false;
       });
     }
+  }
+
+  Future<void> openWhatsApp(String number) async {
+    String cleaned = number.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (!cleaned.startsWith('91')) {
+      cleaned = '91$cleaned';
+    }
+
+    final Uri uri = Uri.parse('https://wa.me/$cleaned');
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   String formatDuration(int seconds) {
@@ -139,22 +157,114 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: ListTile(
-                  leading: const Icon(Icons.phone, color: Colors.deepPurple),
-                  title: Text(
-                    phone.number,
-                    style: const TextStyle(color: Colors.white),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 12,
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.call, color: Colors.greenAccent),
-                    onPressed: () {
-                      callNumber(phone.number);
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        phone.number,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              // Video Call
+                              openWhatsApp(phone.number);
+                            },
+                            child: const Column(
+                              children: [
+                                Icon(Icons.videocam, color: Colors.blueAccent),
+                                SizedBox(height: 4),
+                                Text(
+                                  "Video",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          InkWell(
+                            onTap: () {
+                              sendMessage(phone.number);
+                            },
+                            child: const Column(
+                              children: [
+                                Icon(Icons.message, color: Colors.orangeAccent),
+                                SizedBox(height: 4),
+                                Text(
+                                  "Message",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          InkWell(
+                            onTap: () {
+                              openWhatsApp(phone.number);
+                            },
+                            child: Column(
+                              children: [
+                                Image.asset(
+                                  'assets/icons/whatsapp_icon.png',
+                                  height: 26,
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  "WhatsApp",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          InkWell(
+                            onTap: () {
+                              callNumber(phone.number);
+                            },
+                            child: const Column(
+                              children: [
+                                Icon(Icons.call, color: Colors.greenAccent),
+                                SizedBox(height: 4),
+                                Text(
+                                  "Call",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
 
             const Align(
