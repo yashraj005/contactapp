@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-
-import 'contact_details_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:my_contact_list/model/local_contact.dart';
+import 'package:my_contact_list/screens/CreateNewContact.dart';
+import 'package:my_contact_list/screens/contact_details_screen.dart';
 
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
@@ -11,32 +14,77 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
-  List<Contact> contacts = [];
-  List<Contact> filteredContacts = [];
-  bool isloading = true;
+  List<LocalContact> contacts = [];
+  List<LocalContact> filteredContacts = [];
+
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadContacts();
+    initializeContacts();
   }
 
-  Future<void> loadContacts() async {
+  Future<void> initializeContacts() async {
+    final box = Hive.box('contactsBox');
+
+    if (box.containsKey('contacts')) {
+      await loadContactsFromHive();
+    } else {
+      await syncContactsFromPhone();
+    }
+  }
+
+  Future<void> syncContactsFromPhone() async {
     if (await FlutterContacts.requestPermission()) {
       final result = await FlutterContacts.getContacts(withProperties: true);
 
+      await saveContactsToLocal(result);
+
+      await loadContactsFromHive();
+    } else {
       setState(() {
-        contacts = result;
-        filteredContacts = result;
-        isloading = false;
+        isLoading = false;
       });
     }
+  }
+
+  Future<void> saveContactsToLocal(List<Contact> contacts) async {
+    final box = Hive.box('contactsBox');
+
+    List<Map<String, dynamic>> data = contacts.map((c) {
+      return LocalContact(
+        name: c.displayName,
+        phone: c.phones.isNotEmpty ? c.phones.first.number : '',
+      ).toMap();
+    }).toList();
+
+    await box.put('contacts', data);
+
+    print("Saved ${data.length} contacts");
+  }
+
+  Future<void> loadContactsFromHive() async {
+    final box = Hive.box('contactsBox');
+
+    final data = box.get('contacts', defaultValue: []);
+    List<LocalContact> loadedContacts = (data as List)
+        .map((item) => LocalContact.fromMap(item))
+        .toList();
+
+    setState(() {
+      contacts = loadedContacts;
+      filteredContacts = loadedContacts;
+      isLoading = false;
+    });
+
+    print("Loaded ${loadedContacts.length} contacts from Hive");
   }
 
   void searchContact(String query) {
     setState(() {
       filteredContacts = contacts.where((contact) {
-        return contact.displayName.toLowerCase().contains(query.toLowerCase());
+        return contact.name.toLowerCase().contains(query.toLowerCase());
       }).toList();
     });
   }
@@ -50,8 +98,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         title: const Text("Contacts", style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
-
-      body: isloading
+      body: isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Colors.deepPurple),
             )
@@ -65,36 +112,38 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     decoration: InputDecoration(
                       hintText: "Search Contact",
                       hintStyle: const TextStyle(color: Colors.white54),
-
                       prefixIcon: const Icon(
                         Icons.search,
                         color: Colors.white70,
                       ),
-
                       filled: true,
                       fillColor: const Color(0xFF1E1E1E),
-
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
                       ),
-
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide.none,
-                      ),
-
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: Colors.deepPurple,
-                          width: 2,
-                        ),
-                      ),
                     ),
                   ),
                 ),
-
+                Padding(
+                  padding: const EdgeInsetsGeometry.only(right: 20, left: 20),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      bool added = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Createnewcontact(),
+                        ),
+                      );
+                      if (added) {
+                        loadContactsFromHive();
+                      }
+                    },
+                    child: Row(
+                      children: [Icon(Icons.add), Text("Create new Contact")],
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: ListView.builder(
                     itemCount: filteredContacts.length,
@@ -114,8 +163,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
                           leading: CircleAvatar(
                             backgroundColor: Colors.deepPurple,
                             child: Text(
-                              contact.displayName.isNotEmpty
-                                  ? contact.displayName[0].toUpperCase()
+                              contact.name.isNotEmpty
+                                  ? contact.name[0].toUpperCase()
                                   : "?",
                               style: const TextStyle(
                                 color: Colors.white,
@@ -125,33 +174,88 @@ class _ContactsScreenState extends State<ContactsScreen> {
                           ),
 
                           title: Text(
-                            contact.displayName,
+                            contact.name,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
 
-                          subtitle: contact.phones.isNotEmpty
-                              ? Text(
-                                  contact.phones.first.number,
-                                  style: const TextStyle(color: Colors.white70),
-                                )
-                              : const Text(
-                                  "No Number",
-                                  style: TextStyle(color: Colors.white54),
-                                ),
+                          subtitle: Text(
+                            contact.phone.isNotEmpty
+                                ? contact.phone
+                                : "No Number",
+                            style: const TextStyle(color: Colors.white70),
+                          ),
 
                           trailing: const Icon(
                             Icons.chevron_right,
                             color: Colors.white54,
                           ),
+                          onLongPress: () async {
+                            final selected = await showMenu(
+                              context: context,
+                              position: const RelativeRect.fromLTRB(
+                                100,
+                                300,
+                                0,
+                                0,
+                              ),
+                              items: const [
+                                PopupMenuItem(
+                                  value: 'copy',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.copy, color: Colors.grey),
+                                      SizedBox(width: 10),
+                                      Text('Copy number'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit),
+                                      SizedBox(width: 10),
+                                      Text('Edit'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete, color: Colors.red),
+                                      SizedBox(width: 10),
+                                      Text('Delete'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
 
+                            if (selected == 'copy') {
+                              // copy code
+                              Clipboard.setData(
+                                ClipboardData(text: contact.phone),
+                              );
+                            }
+                            if (selected == 'edit') {
+                              // Edit code
+                            }
+
+                            if (selected == 'delete') {
+                              // Delete code
+                            }
+                          },
                           onTap: () {
+                            // later you can pass LocalContact
+                            // print(contact.name);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
+                                builder: (context) =>
                                     ContactDetailsScreen(contact: contact),
                               ),
                             );

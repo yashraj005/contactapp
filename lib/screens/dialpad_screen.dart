@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:my_contact_list/model/local_contact.dart';
 import 'contact_details_screen.dart';
 
 class DialPadScreen extends StatefulWidget {
@@ -13,19 +14,26 @@ class DialPadScreen extends StatefulWidget {
 
 class _DialPadScreenState extends State<DialPadScreen> {
   String number = '';
-  List<Contact> contacts = [];
-  List<Contact> filteredContacts = [];
+  List<LocalContact> contacts = [];
+  List<LocalContact> filteredContacts = [];
+  Future<void> loadContacts() async {
+    final box = Hive.box('contactsBox');
+
+    final data = box.get('contacts', defaultValue: []);
+
+    setState(() {
+      contacts = (data as List)
+          .map((item) => LocalContact.fromMap(item))
+          .toList();
+
+      filteredContacts = [];
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     loadContacts();
-  }
-
-  Future<void> loadContacts() async {
-    if (await FlutterContacts.requestPermission()) {
-      contacts = await FlutterContacts.getContacts(withProperties: true);
-    }
   }
 
   void findContact() {
@@ -38,18 +46,12 @@ class _DialPadScreenState extends State<DialPadScreen> {
       return;
     }
 
-    for (var contact in contacts) {
-      for (var phone in contact.phones) {
-        String phoneNumber = phone.number
-            .replaceAll(' ', '')
-            .replaceAll('-', '');
+    filteredContacts = contacts.where((contact) {
+      String phone = contact.phone.replaceAll(' ', '').replaceAll('-', '');
 
-        if (phoneNumber.contains(entered)) {
-          filteredContacts.add(contact);
-          break;
-        }
-      }
-    }
+      return phone.contains(entered) ||
+          contact.name.toLowerCase().contains(entered.toLowerCase());
+    }).toList();
 
     setState(() {});
   }
@@ -122,22 +124,20 @@ class _DialPadScreenState extends State<DialPadScreen> {
                       itemBuilder: (context, index) {
                         final contact = filteredContacts[index];
 
-                        final phone = contact.phones.isNotEmpty
-                            ? contact.phones.first.number
-                            : "";
+                        final phone = contact.phone;
 
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: Colors.deepPurple,
                             child: Text(
-                              contact.displayName.isNotEmpty
-                                  ? contact.displayName[0]
+                              contact.name.isNotEmpty
+                                  ? contact.name[0].toUpperCase()
                                   : "?",
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
                           title: Text(
-                            contact.displayName,
+                            contact.name,
                             style: const TextStyle(color: Colors.white),
                           ),
                           subtitle: Text(
@@ -147,7 +147,10 @@ class _DialPadScreenState extends State<DialPadScreen> {
                           onTap: () async {
                             await launchUrl(Uri(scheme: 'tel', path: phone));
                           },
-                          onLongPress: () {
+                          // todo
+                          onLongPress: () async {
+                            // final box = await Hive.box('contactsBox');
+                            // final contact = box.get(key)
                             Navigator.push(
                               context,
                               MaterialPageRoute(

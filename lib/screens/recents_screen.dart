@@ -6,6 +6,8 @@ import 'package:my_contact_list/screens/contact_details_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../model/local_contact.dart';
+
 class RecentsScreen extends StatefulWidget {
   const RecentsScreen({super.key});
 
@@ -98,7 +100,14 @@ class _RecentsScreenState extends State<RecentsScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ContactDetailsScreen(contact: matchedContact!),
+          builder: (_) => ContactDetailsScreen(
+            contact: LocalContact(
+              name: matchedContact!.displayName,
+              phone: matchedContact!.phones.isNotEmpty
+                  ? matchedContact!.phones.first.number
+                  : "",
+            ),
+          ),
         ),
       );
     } else {
