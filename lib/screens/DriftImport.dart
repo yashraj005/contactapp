@@ -219,31 +219,30 @@ class _DriftimportState extends State<Driftimport> {
       final sheet = excel['Contacts'];
 
       sheet.appendRow([
-        TextCellValue("Name"),
-        TextCellValue("Country Code"),
-        TextCellValue("Phone"),
+        TextCellValue("firstname"),
+        TextCellValue("lastname"),
+        TextCellValue("email"),
+        TextCellValue("mobilenumber"),
+        TextCellValue("worknumber"),
+        TextCellValue("phonenumber"),
+        TextCellValue("mainnumber"),
+        TextCellValue("Date of birth"),
+        TextCellValue("Address"),
       ]);
 
       for (final contact in contactsList) {
-        String countryCode = '+91';
-        String mobileNumber = contact.mobileNumber;
-
-        try {
-          final parsed = PhoneNumber.parse(mobileNumber);
-
-          countryCode = parsed.countryCode;
-          mobileNumber = parsed.nsn;
-        } catch (e) {
-          print('Failed to parse: ${contact.mobileNumber}');
-        }
-
         sheet.appendRow([
           TextCellValue(contact.firstname),
-          TextCellValue(countryCode),
-          TextCellValue(mobileNumber),
+          TextCellValue(contact.lastname),
+          TextCellValue(contact.email),
+          TextCellValue(contact.mobileNumber),
+          TextCellValue(contact.workNumber),
+          TextCellValue(contact.phoneNumber),
+          TextCellValue(contact.mainNumber),
+          TextCellValue(contact.dob?.toString() ?? ""),
+          TextCellValue(contact.address),
         ]);
       }
-
       final bytes = excel.encode();
       if (bytes == null) return;
 
