@@ -27,7 +27,7 @@ class _DriftimportState extends State<Driftimport> {
 
   bool isImporting = false;
   double progress = 0;
-
+  StateSetter? dialogSetState;
   List<db.Contact> contactsList = [];
   List<db.Contact> filteredcontactsList = [];
   String searchQuery = "";
@@ -78,7 +78,38 @@ class _DriftimportState extends State<Driftimport> {
       print("Phone contacts found: ${phoneContacts.length}");
 
       final total = phoneContacts.length;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            dialogSetState = setDialogState;
 
+            return AlertDialog(
+              title: const Text("Importing Contacts"),
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(value: progress),
+                    const SizedBox(height: 15),
+                    Text(
+                      "${(progress * 100).toStringAsFixed(0)} %",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text("${(progress * total).toInt()} / $total"),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
       if (total == 0) {
         ScaffoldMessenger.of(
           context,
@@ -90,7 +121,7 @@ class _DriftimportState extends State<Driftimport> {
         isImporting = true;
         progress = 0;
       });
-
+      await Future.delayed(const Duration(milliseconds: 100));
       await database.deleteAllContacts();
 
       for (int i = 0; i < total; i++) {
@@ -127,14 +158,21 @@ class _DriftimportState extends State<Driftimport> {
         }
 
         if (mounted) {
-          setState(() {
-            progress = (i + 1) / total;
-          });
+          progress = (i + 1) / total;
+
+          if (mounted) {
+            setState(() {});
+          }
+
+          dialogSetState?.call(() {});
+          await Future.delayed(const Duration(milliseconds: 1));
         }
       }
 
       await loadContacts();
-
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
       if (mounted) {
         setState(() {
           isImporting = false;
@@ -346,15 +384,15 @@ class _DriftimportState extends State<Driftimport> {
             ),
 
             // getting of country-code this  was just for testing
-            ElevatedButton(
-              onPressed: () {
-                getCountryCode();
-              },
-              child: Text(
-                "get "
-                "country codes",
-              ),
-            ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     getCountryCode();
+            //   },
+            //   child: Text(
+            //     "get "
+            //     "country codes",
+            //   ),
+            // ),
             TextField(
               controller: searchController,
               onChanged: (val) {
@@ -426,6 +464,7 @@ class _DriftimportState extends State<Driftimport> {
                         final contact = contactsList[index];
 
                         String contactname = contact.firstname;
+
                         String first = contactname
                             .toUpperCase()
                             .characters
@@ -442,177 +481,159 @@ class _DriftimportState extends State<Driftimport> {
                         else
                           number = contact.mainNumber;
 
-                        return Material(
-                          color: Colors.black87,
-                          child: ListTile(
-                            onLongPress: () async {
-                              final selected = await showMenu(
-                                context: context,
-                                position: RelativeRect.fromLTRB(100, 300, 0, 0),
-                                items: [
-                                  // PopupMenuItem(
-                                  //   enabled: false,
-                                  //   child: Column(
-                                  //     crossAxisAlignment:
-                                  //         CrossAxisAlignment.start,
-                                  //     children: [
-                                  //       Text(
-                                  //         contactname,
-                                  //         style: TextStyle(
-                                  //           fontWeight: FontWeight.bold,
-                                  //           fontSize: 16,
-                                  //         ),
-                                  //       ),
-                                  //       SizedBox(height: 4),
-                                  //       Text(
-                                  //         contact.phone,
-                                  //         style: TextStyle(
-                                  //           color: Colors.grey,
-                                  //           fontSize: 13,
-                                  //         ),
-                                  //       ),
-                                  //       Divider(height: 20),
-                                  //     ],
-                                  //   ),
-                                  // ),
+                        return Builder(
+                          builder: (tileContext) {
+                            return Material(
+                              color: Colors.black87,
+                              child: ListTile(
+                                onLongPress: () async {
+                                  final RenderBox button =
+                                      tileContext.findRenderObject()
+                                          as RenderBox;
+                                  final RenderBox overlay =
+                                      Overlay.of(
+                                            context,
+                                          ).context.findRenderObject()
+                                          as RenderBox;
 
-                                  // PopupMenuItem(
-                                  //   onTap: () {
-                                  //     Clipboard.setData(
-                                  //       ClipboardData(text: contact.phone),
-                                  //     );
-                                  //   },
-                                  //   child: ListTile(
-                                  //     leading: Icon(Icons.copy_outlined),
-                                  //     title: Text("Copy Number"),
-                                  //     dense: true,
-                                  //     contentPadding: EdgeInsets.zero,
-                                  //   ),
-                                  // ),
-                                  PopupMenuItem(
-                                    onTap: () async {
-                                      // Navigate to edit screen
-                                      final edited = await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => Editscreen(
-                                            id: id,
-                                            firstname: contact.firstname,
-                                            lastname: contact.lastname,
-                                            address: contact.address,
-                                            dob: contact.dob,
-                                            mainNumber: contact.mainNumber,
-                                            phoneNumber: contact.phoneNumber,
-                                            workNumber: contact.workNumber,
-                                            mobileNumber: contact.mobileNumber,
-                                            email: contact.email,
+                                  final RelativeRect position =
+                                      RelativeRect.fromRect(
+                                        Rect.fromPoints(
+                                          button.localToGlobal(
+                                            Offset.zero,
+                                            ancestor: overlay,
+                                          ),
+                                          button.localToGlobal(
+                                            button.size.bottomRight(
+                                              Offset.zero,
+                                            ),
+                                            ancestor: overlay,
                                           ),
                                         ),
+                                        Offset.zero & overlay.size,
                                       );
 
-                                      if (edited == true) {
-                                        await loadContacts();
-                                      }
-                                    },
-                                    child: ListTile(
-                                      leading: Icon(Icons.edit_outlined),
-                                      title: Text("Edit Contact"),
-                                      dense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                  ),
+                                  final selected = await showMenu(
+                                    context: context,
+                                    position: position,
+                                    items: [
+                                      PopupMenuItem(
+                                        onTap: () async {
+                                          final edited = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => Editscreen(
+                                                id: id,
+                                                firstname: contact.firstname,
+                                                lastname: contact.lastname,
+                                                address: contact.address,
+                                                dob: contact.dob,
+                                                mainNumber: contact.mainNumber,
+                                                phoneNumber:
+                                                    contact.phoneNumber,
+                                                workNumber: contact.workNumber,
+                                                mobileNumber:
+                                                    contact.mobileNumber,
+                                                email: contact.email,
+                                              ),
+                                            ),
+                                          );
 
-                                  PopupMenuItem(
-                                    onTap: () {
-                                      Future.delayed(Duration.zero, () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (dialogContext) => AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            title: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.warning_amber_rounded,
-                                                  color: Colors.red,
+                                          if (edited == true) {
+                                            await loadContacts();
+                                          }
+                                        },
+                                        child: ListTile(
+                                          leading: Icon(Icons.edit_outlined),
+                                          title: Text("Edit Contact"),
+                                          dense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        onTap: () async {
+                                          // Delete dialog...
+                                          final isdeleted = await showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: Text(
+                                                  "Confirm to delete?",
                                                 ),
-                                                SizedBox(width: 10),
-                                                Text("Delete Contact"),
-                                              ],
-                                            ),
-                                            content: Text(
-                                              "Are you sure you want to delete $contactname?",
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(dialogContext);
-                                                },
-                                                child: Text("Cancel"),
-                                              ),
-                                              ElevatedButton.icon(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                  foregroundColor: Colors.white,
+                                                content: Row(
+                                                  children: [
+                                                    ElevatedButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: Text("No"),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () async {
+                                                        await database
+                                                            .deleteContact(id);
+                                                        Navigator.pop(
+                                                          context,
+                                                          true,
+                                                        );
+                                                      },
+                                                      child: Text("Yes"),
+                                                    ),
+                                                  ],
                                                 ),
-                                                onPressed: () async {
-                                                  await database.deleteContact(
-                                                    id,
-                                                  );
-                                                  Navigator.pop(dialogContext);
-                                                  loadContacts();
-                                                },
-                                                icon: Icon(Icons.delete),
-                                                label: Text("Delete"),
-                                              ),
-                                            ],
+                                              );
+                                            },
+                                          );
+                                          if (isdeleted == true) {
+                                            await loadContacts();
+                                          }
+                                        },
+                                        child: ListTile(
+                                          leading: Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
                                           ),
-                                        );
-                                      });
-                                    },
-                                    child: ListTile(
-                                      leading: Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
+                                          title: Text(
+                                            "Delete Contact",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                          dense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
                                       ),
-                                      title: Text(
-                                        "Delete Contact",
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                      dense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                            onTap: () async {
-                              final ischanged = Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ContactDetailsScreen(contact: contact),
-                                ),
-                              );
+                                    ],
+                                  );
+                                },
 
-                              // if (ischanged == true || ischanged == false) {
-                              await loadContacts();
-                              // }
-                            },
-                            leading: CircleAvatar(child: Text("${first}")),
-                            title: Text(
-                              "${contact.firstname + " " + contact.lastname}",
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            subtitle: Text(
-                              "${number}",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            trailing: Icon(Icons.info),
-                          ),
+                                onTap: () async {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ContactDetailsScreen(
+                                            contact: contact,
+                                          ),
+                                    ),
+                                  );
+                                  await loadContacts();
+                                },
+
+                                leading: CircleAvatar(child: Text(first)),
+                                title: Text(
+                                  overflow: TextOverflow.ellipsis,
+                                  "${contact.firstname}" +
+                                      " " +
+                                      "${contact.lastname}",
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                                subtitle: Text(
+                                  number,
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                                trailing: Icon(Icons.info),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),

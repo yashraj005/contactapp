@@ -1,3 +1,4 @@
+import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:my_contact_list/screens/EditScreen.dart';
@@ -250,6 +251,64 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
             ),
 
             const SizedBox(height: 30),
+            Column(
+              children: [
+                if (widget.contact.dob != null)
+                  Card(
+                    color: const Color(0xFF1E1E1E),
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Colors.purple,
+                        child: Icon(Icons.cake, color: Colors.white),
+                      ),
+                      title: const Text(
+                        "Date of Birth",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        "${widget.contact.dob!.day}/${widget.contact.dob!.month}/${widget.contact.dob!.year}",
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ),
+
+                if (widget.contact.address != null &&
+                    widget.contact.address!.trim().isNotEmpty)
+                  Card(
+                    color: const Color(0xFF1E1E1E),
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Colors.purple,
+                        child: Icon(Icons.location_on, color: Colors.white),
+                      ),
+                      title: const Text(
+                        "Address",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        widget.contact.address!,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             if (widget.contact.email != "")
               ListTile(
                 title: Text(

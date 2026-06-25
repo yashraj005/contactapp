@@ -18,9 +18,16 @@ class _CreateNewContactState extends State<CreateNewContact> {
   final TextEditingController emailController = TextEditingController();
 
   final TextEditingController mobileController = TextEditingController();
+
   final TextEditingController workController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController mainController = TextEditingController();
+
+  final TextEditingController mobileccController = TextEditingController();
+  final TextEditingController workccController = TextEditingController();
+  final TextEditingController phoneccController = TextEditingController();
+  final TextEditingController mainccController = TextEditingController();
+
   final TextEditingController dobcontroller = TextEditingController();
 
   DateTime? selectedDob;
@@ -99,14 +106,122 @@ class _CreateNewContactState extends State<CreateNewContact> {
   }
 
   Future<void> addContact() async {
+    if (firstnameController.text.trim().isEmpty &&
+        lastnameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Name field is missing")));
+      return;
+    }
+
+    if (mobileController.text.trim().isEmpty &&
+        workController.text.trim().isEmpty &&
+        phoneController.text.trim().isEmpty &&
+        mainController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Number field is missing")));
+      return;
+    }
+
+    // Mobile
+    if (mobileController.text.trim().isNotEmpty) {
+      if (mobileccController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fill CC for Mobile Number")),
+        );
+        return;
+      }
+
+      try {
+        PhoneNumber.parse("${mobileccController.text.trim()}");
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid Country Code for Mobile Number"),
+          ),
+        );
+        return;
+      }
+    }
+
+    // Work
+    if (workController.text.trim().isNotEmpty) {
+      if (workccController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fill CC for Work Number")),
+        );
+        return;
+      }
+
+      try {
+        PhoneNumber.parse("${workccController.text.trim()}");
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid Country Code for Work Number")),
+        );
+        return;
+      }
+    }
+
+    // Phone
+    if (phoneController.text.trim().isNotEmpty) {
+      if (phoneccController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fill CC for Phone Number")),
+        );
+        return;
+      }
+
+      try {
+        PhoneNumber.parse("${phoneccController.text.trim()}");
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid Country Code for Phone Number"),
+          ),
+        );
+        return;
+      }
+    }
+
+    // Main
+    if (mainController.text.trim().isNotEmpty) {
+      if (mainccController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fill CC for Main Number")),
+        );
+        return;
+      }
+
+      try {
+        PhoneNumber.parse("${mainccController.text.trim()}");
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid Country Code for Main Number")),
+        );
+        return;
+      }
+    }
+
+    final mobileNumber =
+        mobileccController.text.trim() + mobileccController.text.trim();
+
+    final workNumber =
+        workccController.text.trim() + workController.text.trim();
+    final phoneNumber =
+        phoneccController.text.trim() + phoneController.text.trim();
+    final mainNumber =
+        mainccController.text.trim() + mainController.text.trim();
+
     await database.insertToDb(
       firstnameController.text.trim(),
       lastnameController.text.trim(),
       emailController.text.trim(),
-      mobileController.text.trim(),
-      workController.text.trim(),
-      phoneController.text.trim(),
-      mainController.text.trim(),
+      mobileNumber,
+      workNumber,
+      phoneNumber,
+      mainNumber,
       selectedDob ?? DateTime.now(),
       addressController.text.trim(),
     );
@@ -169,7 +284,7 @@ class _CreateNewContactState extends State<CreateNewContact> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Phone Numbers",
+                  "Phone Numbers ",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -177,20 +292,194 @@ class _CreateNewContactState extends State<CreateNewContact> {
                   ),
                 ),
               ),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Atleast 1 is needed",
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "CC -> Country Code",
+                  style: TextStyle(color: Colors.grey, fontSize: 11),
+                ),
+              ),
 
               const SizedBox(height: 10),
 
-              buildField(
-                mobileController,
-                "Mobile Number (+91xxxxxxxxxx)",
-                Icons.smartphone,
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: mobileccController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "CC",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: mobileController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "Mobile Number",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          prefixIcon: const Icon(Icons.smartphone),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
-              buildField(workController, "Work Number", Icons.work),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: workccController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "CC",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: workController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "Work Number",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          prefixIcon: const Icon(Icons.work),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-              buildField(phoneController, "Home Number", Icons.phone),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: phoneccController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "CC",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "Phone Number",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          prefixIcon: const Icon(Icons.phone),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-              buildField(mainController, "Main Number", Icons.call),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: mainccController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "CC",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: mainController,
+                        keyboardType: TextInputType.phone,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: "Main Number",
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          prefixIcon: const Icon(Icons.call),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 15),
               buildDateField(),

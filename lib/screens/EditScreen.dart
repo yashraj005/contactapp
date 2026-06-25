@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import '../db/app_database.dart' as db;
 
 class Editscreen extends StatefulWidget {
@@ -41,30 +42,72 @@ class _EditscreenState extends State<Editscreen> {
   late TextEditingController workNumberController;
   late TextEditingController phoneNumberController;
   late TextEditingController mainNumberController;
+  late TextEditingController mobileNumberccController;
+  late TextEditingController workNumberccController;
+  late TextEditingController phoneNumberccController;
+  late TextEditingController mainNumberccController;
   late TextEditingController dobController;
   late TextEditingController addressController;
+  void _splitNumber(
+    String? number,
+    TextEditingController ccController,
+    TextEditingController numberController,
+  ) {
+    if (number == null || number.trim().isEmpty) return;
+
+    try {
+      final parsed = PhoneNumber.parse(number);
+
+      ccController.text = "+${parsed.countryCode}";
+      numberController.text = parsed.nsn;
+    } catch (_) {
+      // Couldn't parse, keep original number
+      numberController.text = number;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
 
     firstNameController = TextEditingController(text: widget.firstname ?? "");
-
     lastNameController = TextEditingController(text: widget.lastname ?? "");
-
     emailController = TextEditingController(text: widget.email ?? "");
 
     mobileNumberController = TextEditingController(
       text: widget.mobileNumber ?? "",
     );
-
     workNumberController = TextEditingController(text: widget.workNumber ?? "");
-
     phoneNumberController = TextEditingController(
       text: widget.phoneNumber ?? "",
     );
-
     mainNumberController = TextEditingController(text: widget.mainNumber ?? "");
+
+    mobileNumberccController = TextEditingController();
+    workNumberccController = TextEditingController();
+    phoneNumberccController = TextEditingController();
+    mainNumberccController = TextEditingController();
+
+    _splitNumber(
+      widget.mobileNumber,
+      mobileNumberccController,
+      mobileNumberController,
+    );
+    _splitNumber(
+      widget.workNumber,
+      workNumberccController,
+      workNumberController,
+    );
+    _splitNumber(
+      widget.phoneNumber,
+      phoneNumberccController,
+      phoneNumberController,
+    );
+    _splitNumber(
+      widget.mainNumber,
+      mainNumberccController,
+      mainNumberController,
+    );
 
     dobController = TextEditingController(
       text: widget.dob?.toString().split(' ')[0] ?? '',
@@ -87,6 +130,89 @@ class _EditscreenState extends State<Editscreen> {
 
     database.close();
     super.dispose();
+  }
+
+  Widget buildPhoneField({
+    required TextEditingController ccController,
+    required TextEditingController numberController,
+    required String label,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 90,
+            child: TextField(
+              controller: ccController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "CC",
+                labelStyle: const TextStyle(color: Colors.purpleAccent),
+                prefixIcon: const Icon(Icons.flag, color: Colors.purpleAccent),
+                filled: true,
+                fillColor: const Color(0xFF2A1B3D),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(
+                    color: Colors.deepPurple,
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(
+                    color: Colors.purpleAccent,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          Expanded(
+            child: TextField(
+              controller: numberController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: label,
+                labelStyle: const TextStyle(color: Colors.purpleAccent),
+                prefixIcon: Icon(icon, color: Colors.purpleAccent),
+                filled: true,
+                fillColor: const Color(0xFF2A1B3D),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(
+                    color: Colors.deepPurple,
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(
+                    color: Colors.purpleAccent,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildField({
@@ -235,34 +361,36 @@ class _EditscreenState extends State<Editscreen> {
                         ),
                         child: Column(
                           children: [
-                            buildField(
-                              controller: mobileNumberController,
+                            buildPhoneField(
+                              ccController: mobileNumberccController,
+                              numberController: mobileNumberController,
                               label: "Mobile Number",
                               icon: Icons.phone_android,
-                              keyboardType: TextInputType.phone,
                             ),
-                            buildField(
-                              controller: workNumberController,
-                              label: "Work Number",
-                              icon: Icons.work,
-                              keyboardType: TextInputType.phone,
-                            ),
-                            buildField(
-                              controller: phoneNumberController,
-                              label: "Home Number",
-                              icon: Icons.home,
-                              keyboardType: TextInputType.phone,
-                            ),
-                            buildField(
-                              controller: mainNumberController,
-                              label: "Main Number",
-                              icon: Icons.call,
-                              keyboardType: TextInputType.phone,
-                            ),
+                            if (workNumberController.text.trim().isNotEmpty)
+                              buildPhoneField(
+                                ccController: workNumberccController,
+                                numberController: workNumberController,
+                                label: "Work Number",
+                                icon: Icons.work,
+                              ),
+                            if (phoneNumberController.text.trim().isNotEmpty)
+                              buildPhoneField(
+                                ccController: phoneNumberccController,
+                                numberController: phoneNumberController,
+                                label: "Home Number",
+                                icon: Icons.home,
+                              ),
+                            if (mainNumberController.text.trim().isNotEmpty)
+                              buildPhoneField(
+                                ccController: mainNumberccController,
+                                numberController: mainNumberController,
+                                label: "Main Number",
+                                icon: Icons.call,
+                              ),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 20),
 
                       // CONTACT INFO
@@ -382,6 +510,7 @@ class _EditscreenState extends State<Editscreen> {
                   },
                 ),
               ),
+              SizedBox(height: 30),
             ],
           ),
         ),

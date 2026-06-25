@@ -45,6 +45,7 @@ dependencies:
   path_provider: ^2.1.6
   path: ^1.9.1
   phone_numbers_parser: ^9.0.0
+  flutter_libphonenumber: ^2.5.1
 
 dev_dependencies:
   flutter_test:
@@ -53,7 +54,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
   build_runner: ^2.15.0
-  drift_dev: ^2.34.0
+  drift_dev: ^2.34.1+1
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
