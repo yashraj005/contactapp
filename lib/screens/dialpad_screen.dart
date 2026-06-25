@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:hive_flutter/adapters.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:my_contact_list/model/local_contact.dart';
+import 'package:my_contact_list/db/app_database.dart' as db;
 import 'contact_details_screen.dart';
 
 class DialPadScreen extends StatefulWidget {
@@ -14,18 +12,14 @@ class DialPadScreen extends StatefulWidget {
 
 class _DialPadScreenState extends State<DialPadScreen> {
   String number = '';
-  List<LocalContact> contacts = [];
-  List<LocalContact> filteredContacts = [];
-  Future<void> loadContacts() async {
-    final box = Hive.box('contactsBox');
+  final database = db.AppDatabase();
 
-    final data = box.get('contacts', defaultValue: []);
+  List<db.Contact> contacts = [];
+  List<db.Contact> filteredContacts = [];
+  Future<void> loadContacts() async {
+    contacts = await database.getAllContacts();
 
     setState(() {
-      contacts = (data as List)
-          .map((item) => LocalContact.fromMap(item))
-          .toList();
-
       filteredContacts = [];
     });
   }
@@ -37,20 +31,34 @@ class _DialPadScreenState extends State<DialPadScreen> {
   }
 
   void findContact() {
-    filteredContacts.clear();
-
     String entered = number.replaceAll(' ', '').replaceAll('-', '');
 
     if (entered.isEmpty) {
-      setState(() {});
+      setState(() {
+        filteredContacts = [];
+      });
       return;
     }
 
     filteredContacts = contacts.where((contact) {
-      String phone = contact.phone.replaceAll(' ', '').replaceAll('-', '');
+      String mobile = contact.mobileNumber
+          .replaceAll(' ', '')
+          .replaceAll('-', '');
 
-      return phone.contains(entered) ||
-          contact.name.toLowerCase().contains(entered.toLowerCase());
+      String work = contact.workNumber.replaceAll(' ', '').replaceAll('-', '');
+
+      String home = contact.phoneNumber.replaceAll(' ', '').replaceAll('-', '');
+
+      String main = contact.mainNumber.replaceAll(' ', '').replaceAll('-', '');
+
+      String fullName = "${contact.firstname} ${contact.lastname}"
+          .toLowerCase();
+
+      return mobile.contains(entered) ||
+          work.contains(entered) ||
+          home.contains(entered) ||
+          main.contains(entered) ||
+          fullName.contains(entered.toLowerCase());
     }).toList();
 
     setState(() {});
@@ -115,7 +123,6 @@ class _DialPadScreenState extends State<DialPadScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-
             Expanded(
               child: filteredContacts.isEmpty
                   ? const SizedBox()
@@ -124,46 +131,58 @@ class _DialPadScreenState extends State<DialPadScreen> {
                       itemBuilder: (context, index) {
                         final contact = filteredContacts[index];
 
-                        final phone = contact.phone;
+                        String phone = '';
+
+                        if (contact.mobileNumber.isNotEmpty) {
+                          phone = contact.mobileNumber;
+                        } else if (contact.mainNumber.isNotEmpty) {
+                          phone = contact.mainNumber;
+                        } else if (contact.phoneNumber.isNotEmpty) {
+                          phone = contact.phoneNumber;
+                        } else if (contact.workNumber.isNotEmpty) {
+                          phone = contact.workNumber;
+                        }
 
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: Colors.deepPurple,
                             child: Text(
-                              contact.name.isNotEmpty
-                                  ? contact.name[0].toUpperCase()
+                              contact.firstname.isNotEmpty
+                                  ? contact.firstname[0].toUpperCase()
                                   : "?",
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
+
                           title: Text(
-                            contact.name,
+                            "${contact.firstname} ${contact.lastname}",
                             style: const TextStyle(color: Colors.white),
                           ),
+
                           subtitle: Text(
                             phone,
                             style: const TextStyle(color: Colors.white70),
                           ),
+
                           onTap: () async {
-                            await launchUrl(Uri(scheme: 'tel', path: phone));
+                            if (phone.isNotEmpty) {
+                              await launchUrl(Uri(scheme: 'tel', path: phone));
+                            }
                           },
-                          // todo
-                          onLongPress: () async {
-                            // final box = await Hive.box('contactsBox');
-                            // final contact = box.get(key)
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ContactDetailsScreen(contact: contact),
-                              ),
-                            );
+
+                          onLongPress: () {
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (_) =>
+                            //         ContactDetailsScreen(contact: contact),
+                            //   ),
+                            // );
                           },
                         );
                       },
                     ),
             ),
-
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

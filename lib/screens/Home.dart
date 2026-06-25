@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/contact.dart';
+import 'package:my_contact_list/screens/DriftImport.dart';
 import 'package:my_contact_list/screens/LoadingScreen.dart';
 import 'package:my_contact_list/screens/contacts_screen.dart';
 import 'package:my_contact_list/screens/dialpad_screen.dart';
@@ -30,7 +31,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int currentIndex = 1;
 
-  final pages = const [DialPadScreen(), RecentsScreen(), ContactsScreen()];
+  final pages = const [
+    DialPadScreen(),
+    RecentsScreen(),
+    // ContactsScreen(),
+    Driftimport(),
+  ];
 
   @override
   @override
@@ -63,10 +69,11 @@ class _HomePageState extends State<HomePage> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.dialpad), label: 'Dial'),
             NavigationDestination(icon: Icon(Icons.history), label: 'Recents'),
-            NavigationDestination(
-              icon: Icon(Icons.contacts),
-              label: 'Contacts',
-            ),
+            // NavigationDestination(
+            //   icon: Icon(Icons.contacts),
+            //   label: 'Contacts',
+            // ),
+            NavigationDestination(icon: Icon(Icons.data_object), label: 'DB'),
           ],
         ),
       ),

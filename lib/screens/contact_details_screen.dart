@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:my_contact_list/screens/EditScreen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:call_log/call_log.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
-
-import '../model/local_contact.dart';
+import 'package:my_contact_list/db/app_database.dart' as db;
 
 class ContactDetailsScreen extends StatefulWidget {
-  final LocalContact contact;
+  final db.Contact contact;
 
-  const ContactDetailsScreen({super.key, required this.contact});
+  ContactDetailsScreen({super.key, required this.contact});
 
   @override
   State<ContactDetailsScreen> createState() => _ContactDetailsScreenState();
 }
 
 class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
+  final database = db.AppDatabase();
+
   List<CallLogEntry> callHistory = [];
   bool loadingHistory = true;
 
@@ -53,7 +56,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
     if (await Permission.phone.request().isGranted) {
       final logs = await CallLog.get();
 
-      String contactNumber = widget.contact.phone.replaceAll(
+      String contactNumber = widget.contact.mobileNumber.replaceAll(
         RegExp(r'[^0-9]'),
         '',
       );
@@ -113,14 +116,23 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final phone = widget.contact.phone;
+    String number = "";
+
+    if (widget.contact.mobileNumber.isNotEmpty)
+      number = widget.contact.mobileNumber;
+    else if (widget.contact.workNumber.isNotEmpty)
+      number = widget.contact.workNumber;
+    else if (widget.contact.phoneNumber.isNotEmpty)
+      number = widget.contact.phoneNumber;
+    else
+      number = widget.contact.mainNumber;
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
         title: Text(
-          widget.contact.name,
+          widget.contact.firstname,
           style: const TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -136,8 +148,8 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
               backgroundColor: Colors.deepPurple,
 
               child: Text(
-                widget.contact.name.isNotEmpty
-                    ? widget.contact.name[0].toUpperCase()
+                widget.contact.firstname.isNotEmpty
+                    ? widget.contact.firstname[0].toUpperCase()
                     : "?",
                 style: const TextStyle(
                   color: Colors.white,
@@ -150,7 +162,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
             const SizedBox(height: 20),
 
             Text(
-              widget.contact.name,
+              "${widget.contact.firstname + " " + widget.contact.lastname}",
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -173,7 +185,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                 child: Column(
                   children: [
                     Text(
-                      phone,
+                      number,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -189,7 +201,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                         Column(
                           children: [
                             IconButton(
-                              onPressed: () => callNumber(phone),
+                              onPressed: () => callNumber(number),
                               icon: const Icon(Icons.call, color: Colors.green),
                             ),
                             const Text(
@@ -202,7 +214,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                         Column(
                           children: [
                             IconButton(
-                              onPressed: () => sendMessage(phone),
+                              onPressed: () => sendMessage(number),
                               icon: const Icon(
                                 Icons.message,
                                 color: Colors.orange,
@@ -218,8 +230,11 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                         Column(
                           children: [
                             IconButton(
-                              onPressed: () => openWhatsApp(phone),
-                              icon: const Icon(Icons.chat, color: Colors.green),
+                              onPressed: () => openWhatsApp(number),
+                              icon: Image.asset(
+                                height: 26,
+                                './assets/icons/whatsapp_icon.png',
+                              ),
                             ),
                             const Text(
                               "WhatsApp",
@@ -235,7 +250,76 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
             ),
 
             const SizedBox(height: 30),
-
+            if (widget.contact.email != "")
+              ListTile(
+                title: Text(
+                  widget.contact.email,
+                  style: TextStyle(color: Colors.blue),
+                ),
+                subtitle: Text("Email"),
+                trailing: IconButton(
+                  onPressed: () async {
+                    final url = Uri(
+                      scheme: 'mailto',
+                      path: widget.contact.email,
+                    );
+                    await launchUrl(url);
+                  },
+                  icon: Icon(Icons.email_outlined, color: Colors.white),
+                ),
+              ),
+            Column(
+              children: [
+                if (widget.contact.workNumber != "")
+                  ListTile(
+                    subtitle: Text("Work"),
+                    title: Text(
+                      widget.contact.workNumber,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () async {
+                        final url = Uri(
+                          scheme: 'tel',
+                          path: widget.contact.workNumber,
+                        );
+                        await launchUrl(url);
+                      },
+                      icon: Icon(Icons.call, color: Colors.white),
+                    ),
+                  ),
+                if (widget.contact.phoneNumber != "")
+                  ListTile(
+                    title: Text(
+                      widget.contact.phoneNumber,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () async {
+                        await launchUrl(
+                          Uri(scheme: 'tel', path: widget.contact.phoneNumber),
+                        );
+                      },
+                      icon: Icon(Icons.call, color: Colors.white),
+                    ),
+                  ),
+                if (widget.contact.mainNumber.isNotEmpty)
+                  ListTile(
+                    title: Text(
+                      widget.contact.mainNumber,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () async {
+                        await launchUrl(
+                          Uri(scheme: 'tel', path: widget.contact.mainNumber),
+                        );
+                      },
+                      icon: Icon(Icons.call, color: Colors.white),
+                    ),
+                  ),
+              ],
+            ),
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(

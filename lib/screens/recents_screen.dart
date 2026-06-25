@@ -97,19 +97,19 @@ class _RecentsScreenState extends State<RecentsScreen> {
     }
 
     if (matchedContact != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ContactDetailsScreen(
-            contact: LocalContact(
-              name: matchedContact!.displayName,
-              phone: matchedContact!.phones.isNotEmpty
-                  ? matchedContact!.phones.first.number
-                  : "",
-            ),
-          ),
-        ),
-      );
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => ContactDetailsScreen(
+      //       contact: LocalContact(
+      //         name: matchedContact!.displayName,
+      //         phone: matchedContact!.phones.isNotEmpty
+      //             ? matchedContact!.phones.first.number
+      //             : "",
+      //       ),
+      //     ),
+      //   ),
+      // );
     } else {
       showModalBottomSheet(
         context: context,
@@ -132,7 +132,7 @@ class _RecentsScreenState extends State<RecentsScreen> {
                 const SizedBox(height: 20),
 
                 ListTile(
-                  title: const Text(
+                  title: Text(
                     "Number",
                     style: TextStyle(color: Colors.white70),
                   ),

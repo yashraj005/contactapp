@@ -1,215 +1,212 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:my_contact_list/db/app_database.dart' as db;
+import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 
-class Createnewcontact extends StatefulWidget {
-  const Createnewcontact({super.key});
+class CreateNewContact extends StatefulWidget {
+  const CreateNewContact({super.key});
 
   @override
-  State<Createnewcontact> createState() => _CreatenewcontactState();
+  State<CreateNewContact> createState() => _CreateNewContactState();
 }
 
-class _CreatenewcontactState extends State<Createnewcontact> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController numberController = TextEditingController();
+class _CreateNewContactState extends State<CreateNewContact> {
+  final database = db.AppDatabase();
+
+  final TextEditingController firstnameController = TextEditingController();
+  final TextEditingController lastnameController = TextEditingController();
+
   final TextEditingController emailController = TextEditingController();
+
+  final TextEditingController mobileController = TextEditingController();
+  final TextEditingController workController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController mainController = TextEditingController();
+  final TextEditingController dobcontroller = TextEditingController();
+
+  DateTime? selectedDob;
+
+  Widget buildField(
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        keyboardType: hint.contains("Number")
+            ? TextInputType.phone
+            : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: hint,
+          labelStyle: const TextStyle(color: Colors.white54),
+          prefixIcon: Icon(icon),
+          filled: true,
+          fillColor: const Color(0xFF1E1E1E),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+        ),
+      ),
+    );
+  }
+
+  Widget buildDateField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: dobcontroller,
+        readOnly: true,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: "Birth Date",
+          labelStyle: const TextStyle(color: Colors.white54),
+          prefixIcon: const Icon(Icons.cake),
+          suffixIcon: const Icon(Icons.calendar_month),
+          filled: true,
+          fillColor: const Color(0xFF1E1E1E),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+        ),
+        onTap: () async {
+          final pickedDate = await showDatePicker(
+            context: context,
+            initialDate: selectedDob ?? DateTime(2000),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+          );
+
+          if (pickedDate != null) {
+            setState(() {
+              selectedDob = pickedDate;
+
+              dobcontroller.text =
+                  "${pickedDate.day.toString().padLeft(2, '0')}/"
+                  "${pickedDate.month.toString().padLeft(2, '0')}/"
+                  "${pickedDate.year}";
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  final TextEditingController addressController = TextEditingController();
+  bool isValidPhone(String phone) {
+    try {
+      return PhoneNumber.parse(phone).isValid();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> addContact() async {
+    await database.insertToDb(
+      firstnameController.text.trim(),
+      lastnameController.text.trim(),
+      emailController.text.trim(),
+      mobileController.text.trim(),
+      workController.text.trim(),
+      phoneController.text.trim(),
+      mainController.text.trim(),
+      selectedDob ?? DateTime.now(),
+      addressController.text.trim(),
+    );
+
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
+  }
 
   @override
   void dispose() {
-    nameController.dispose();
-    numberController.dispose();
+    firstnameController.dispose();
+    lastnameController.dispose();
     emailController.dispose();
+    mobileController.dispose();
+    workController.dispose();
+    phoneController.dispose();
+    mainController.dispose();
+    dobcontroller.dispose();
+    addressController.dispose();
+
+    database.close();
     super.dispose();
-  }
-
-  Future<void> saveContact() async {
-    final name = nameController.text.trim();
-    final phone = numberController.text.trim();
-    final email = emailController.text.trim();
-
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter contact name")),
-      );
-      return;
-    }
-
-    if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter phone number")),
-      );
-      return;
-    }
-
-    final box = Hive.box('contactsBox');
-
-    List contacts = box.get('contacts', defaultValue: []);
-
-    final normalizedPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
-
-    bool exists = contacts.any((item) {
-      final savedPhone = (item['phone'] ?? '').toString().replaceAll(
-        RegExp(r'[^0-9]'),
-        '',
-      );
-
-      return savedPhone == normalizedPhone;
-    });
-
-    if (exists) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Contact already exists")));
-      return;
-    }
-
-    contacts.add({
-      'name': name,
-      'phone': phone,
-      'email': email,
-      'createdAt': DateTime.now().toIso8601String(),
-    });
-
-    await box.put('contacts', contacts);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Contact saved successfully")));
-
-    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Colors.black,
 
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: Colors.black87,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text(
-          "Create Contact",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
+          "Create New Contact",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
 
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF121212), Color(0xFF1E1E1E), Color(0xFF252525)],
-          ),
-        ),
+      body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
+              const CircleAvatar(
+                radius: 45,
+                child: Icon(Icons.person, size: 45),
+              ),
+
               const SizedBox(height: 20),
 
-              CircleAvatar(
-                radius: 55,
-                backgroundColor: Colors.deepPurple,
-                child: const Icon(
-                  Icons.person_add,
-                  size: 55,
-                  color: Colors.white,
-                ),
-              ),
+              buildField(firstnameController, "First Name", Icons.person),
 
-              const SizedBox(height: 35),
+              buildField(lastnameController, "Last Name", Icons.person_outline),
 
-              TextField(
-                controller: nameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Full Name",
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(
-                    Icons.person,
-                    color: Colors.deepPurple,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFF2A2A2A),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
+              buildField(emailController, "Email", Icons.email),
 
               const SizedBox(height: 15),
 
-              TextField(
-                controller: numberController,
-                keyboardType: TextInputType.phone,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Phone Number",
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.phone, color: Colors.deepPurple),
-                  filled: true,
-                  fillColor: const Color(0xFF2A2A2A),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Phone Numbers",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+
+              const SizedBox(height: 10),
+
+              buildField(
+                mobileController,
+                "Mobile Number (+91xxxxxxxxxx)",
+                Icons.smartphone,
+              ),
+
+              buildField(workController, "Work Number", Icons.work),
+
+              buildField(phoneController, "Home Number", Icons.phone),
+
+              buildField(mainController, "Main Number", Icons.call),
 
               const SizedBox(height: 15),
+              buildDateField(),
+              buildField(addressController, "Address", Icons.home),
 
-              TextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Email (Optional)",
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.email, color: Colors.deepPurple),
-                  filled: true,
-                  fillColor: const Color(0xFF2A2A2A),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 35),
+              const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
-                height: 55,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  onPressed: saveContact,
-                  icon: const Icon(Icons.save, color: Colors.white),
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: addContact,
+                  icon: const Icon(Icons.save),
                   label: const Text(
                     "Save Contact",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
               ),
