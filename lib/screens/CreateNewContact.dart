@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_contact_list/db/app_database.dart' as db;
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
+import '../phpdb/ApiService.dart' as api;
 
 class CreateNewContact extends StatefulWidget {
   const CreateNewContact({super.key});
@@ -11,7 +12,7 @@ class CreateNewContact extends StatefulWidget {
 
 class _CreateNewContactState extends State<CreateNewContact> {
   final database = db.AppDatabase();
-
+  final apidb = api.Apiservice();
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
 
@@ -213,7 +214,17 @@ class _CreateNewContactState extends State<CreateNewContact> {
         phoneccController.text.trim() + phoneController.text.trim();
     final mainNumber =
         mainccController.text.trim() + mainController.text.trim();
-
+    await apidb.addContacts(
+      firstnameController.text.trim(),
+      lastnameController.text.trim(),
+      emailController.text.trim(),
+      mobileNumber,
+      workNumber,
+      phoneNumber,
+      mainNumber,
+      selectedDob ?? DateTime.now(),
+      addressController.text.trim(),
+    );
     await database.insertToDb(
       firstnameController.text.trim(),
       lastnameController.text.trim(),

@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import 'package:share_plus/share_plus.dart';
+import '../phpdb/ApiService.dart' as api;
 
 class Driftimport extends StatefulWidget {
   const Driftimport({super.key});
@@ -24,7 +25,7 @@ class Driftimport extends StatefulWidget {
 
 class _DriftimportState extends State<Driftimport> {
   final database = db.AppDatabase();
-
+  final apidb = api.Apiservice();
   bool isImporting = false;
   double progress = 0;
   StateSetter? dialogSetState;
@@ -123,7 +124,6 @@ class _DriftimportState extends State<Driftimport> {
       });
       await Future.delayed(const Duration(milliseconds: 100));
       await database.deleteAllContacts();
-
       for (int i = 0; i < total; i++) {
         final contact = phoneContacts[i];
 
@@ -138,7 +138,17 @@ class _DriftimportState extends State<Driftimport> {
           }
 
           final name = contact.displayName.trim();
-
+          await apidb.addContacts(
+            contact.name.toString(),
+            '',
+            '',
+            mobile,
+            home,
+            work,
+            main,
+            DateTime.now(),
+            '',
+          );
           await database.insertToDb(
             name.isEmpty ? "Unknown" : name,
             '', // lastname
@@ -204,6 +214,7 @@ class _DriftimportState extends State<Driftimport> {
 
   Future<void> deleteContacts() async {
     await database.deleteAllContacts();
+    await apidb.deleteAll();
     await loadContacts();
 
     if (mounted) {
@@ -571,6 +582,10 @@ class _DriftimportState extends State<Driftimport> {
                                                       onPressed: () async {
                                                         await database
                                                             .deleteContact(id);
+                                                        await apidb
+                                                            .deleteContact(
+                                                              id.toString(),
+                                                            );
                                                         Navigator.pop(
                                                           context,
                                                           true,

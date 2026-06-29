@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import '../db/app_database.dart' as db;
+import '../phpdb/ApiService.dart' as api;
 
 class Editscreen extends StatefulWidget {
   final int id;
@@ -34,7 +35,7 @@ class Editscreen extends StatefulWidget {
 
 class _EditscreenState extends State<Editscreen> {
   final database = db.AppDatabase();
-
+  final apidb = api.Apiservice();
   late TextEditingController firstNameController;
   late TextEditingController lastNameController;
   late TextEditingController emailController;
@@ -490,7 +491,18 @@ class _EditscreenState extends State<Editscreen> {
                     DateTime dob =
                         DateTime.tryParse(dobController.text.trim()) ??
                         DateTime.now();
-
+                    await apidb.updateContacts(
+                      widget.id.toString(),
+                      firstNameController.text.trim(),
+                      lastNameController.text.trim(),
+                      emailController.text.trim(),
+                      mobileNumberController.text.trim(),
+                      workNumberController.text.trim(),
+                      phoneNumberController.text.trim(),
+                      mainNumberController.text.trim(),
+                      dob,
+                      addressController.text.trim(),
+                    );
                     await database.updateContact(
                       widget.id,
                       firstNameController.text.trim(),
